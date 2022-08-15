@@ -12,6 +12,7 @@
     "esModuleInterop": true,
     "allowUnreachableCode": false,
     "allowSyntheticDefaultImports": true,
+    "noUncheckedIndexedAccess": true,
     "allowUnusedLabels": false,
     "noFallthroughCasesInSwitch": true,
     "downlevelIteration": true,
@@ -21,6 +22,7 @@
     "strictFunctionTypes": true,
     "strictNullChecks": true,
     "useUnknownInCatchVariables": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "skipLibCheck": true
   }
 }
