@@ -7,6 +7,7 @@
         "build": "tsc",
         "dev": "NODE_ENV=development ts-node-dev --respawn --exit-child --watch -- src/index.ts",
         "db:migrate": "prisma migrate dev",
+        "db:generate": "prisma generate",
         "db:studio": "prisma studio",
         "tests": "vitest run",
         "db:up": "docker-compose up --remove-orphans database"
