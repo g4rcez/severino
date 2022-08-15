@@ -4,7 +4,7 @@ import { Dates } from "../src/lib/dates";
 describe("Dates", () => {
     test("nextDay", () => {
         const date = new Date("1970-01-01T00:00:00.000Z");
-        expect(Dates.epoch(Dates.nextDay(date))).toBe(97199);
+        expect(Dates.nextDay(date).toISOString()).toBe("1970-01-02T02:59:59.999Z");
     });
 
     test("epoch - zero time", () => {
