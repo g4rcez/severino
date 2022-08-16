@@ -6,7 +6,7 @@ type Either<L, R> = NonNullable<Left<L> | Right<R>>;
 
 class EitherError extends Error {}
 
-export const Either = <L, R>({ left, right }: Either<L, R>): NonNullable<L | R> => {
+export const Either = <L, R>({ left, right }: Either<L, R>) => {
     if (right !== undefined && left !== undefined) {
         throw new EitherError(
             `Received both left and right values at runtime when opening an Either\nLeft: ${JSON.stringify(
@@ -15,10 +15,10 @@ export const Either = <L, R>({ left, right }: Either<L, R>): NonNullable<L | R> 
         );
     }
     if (left !== undefined) {
-        return left as NonNullable<L>;
+        return { left };
     }
     if (right !== undefined) {
-        return right as NonNullable<R>;
+        return { right };
     }
     throw new EitherError(`Received no left or right values at runtime when opening Either`);
 };
