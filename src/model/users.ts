@@ -1,7 +1,8 @@
-import { randomUUID, createHmac } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import { db } from "../lib/database";
 import { Either } from "../lib/either";
 import type { users as UserDB } from "@prisma/client";
+import { Rules } from "./rules";
 
 export namespace Users {
     const users = db.users;
@@ -41,6 +42,38 @@ export namespace Users {
 
     export type AuthUser = User & { claims: string[] };
 
+
+    const getUserWithClaims = async (user: UserDB) => {
+        const claims = await db.user_claims.findMany({
+            select: {
+                claim: {
+                    select: {
+                        name: true,
+                    },
+                },
+            },
+            where: {
+                usersId: user.id,
+                AND: {
+                    status: Rules.Status.Active,
+                },
+            },
+        });
+        return { claims: claims.map((x) => x.claim.name), ...mapUser(user) };
+    };
+
+    export const findById = async (id: string) => {
+        const user = await users.findFirst({ where: { id } });
+        if (user === null) return Either.left(new Error("User not found"));
+        const authUser = await getUserWithClaims(user);
+        return Either.right<AuthUser>(authUser);
+    };
+
+    export const existByNickname = async (nickname: string) => {
+        const user = await users.findFirst({ where: { nickname } });
+        return user !== null;
+    };
+
     export const findByEmailAndPassword = async (email: string, password: string) => {
         const user = await users.findFirst({
             where: {
@@ -51,15 +84,7 @@ export namespace Users {
         if (user === null) {
             return Either.left(new Error(`Cannot found ${email}`));
         }
-        const claims = await db.claims.findMany({
-            select: {
-                name: true,
-            },
-            where: {
-                usersId: user?.id,
-            },
-        });
-        const authUser = { claims: claims.map((x) => x.name), ...mapUser(user) };
+        const authUser = await getUserWithClaims(user);
         return Either.right<AuthUser>(authUser);
     };
 }

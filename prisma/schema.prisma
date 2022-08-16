@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,39 +10,49 @@ datasource db {
 model secrets {
   id         String   @id() @default(uuid()) @db.VarChar(36)
   token      String   @db.VarChar(128)
-  created_at DateTime @db.Timestamptz()
-  expires_in DateTime @db.Timestamptz()
+  created_at DateTime @db.Timestamp()
+  expires_in DateTime @db.Timestamp()
   type       String   @db.VarChar(128)
   revoked    Boolean
 }
 
 model users {
-  id         String   @id() @default(uuid()) @db.VarChar(36)
-  email      String   @unique @db.VarChar(512)
-  password   String   @unique @db.VarChar(512)
-  nickname   String   @unique @db.VarChar(32)
-  created_at DateTime @db.Timestamptz()
-  updated_at DateTime @db.Timestamptz()
-  name       String   @db.VarChar(512)
-  claims     claims[]
+  id          String        @id() @default(uuid()) @db.VarChar(36)
+  email       String        @unique @db.VarChar(512)
+  password    String        @unique @db.VarChar(512)
+  nickname    String        @unique @db.VarChar(32)
+  created_at  DateTime      @db.Timestamp()
+  updated_at  DateTime      @db.Timestamp()
+  name        String        @db.VarChar(512)
+  user_claims user_claims[]
 }
 
 model claims {
-  id         String   @id() @default(uuid()) @db.VarChar(36)
-  name       String   @unique @db.VarChar(512)
-  created_at DateTime @db.Timestamptz()
-  updated_at DateTime @db.Timestamptz()
-  users      users?   @relation(fields: [usersId], references: [id])
-  usersId    String?  @db.VarChar(36)
+  id          String        @id() @default(uuid()) @db.VarChar(36)
+  name        String        @unique @db.VarChar(512)
+  created_at  DateTime      @db.Timestamp()
+  updated_at  DateTime      @db.Timestamp()
+  user_claims user_claims[]
+}
+
+model user_claims {
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  user        users    @relation(fields: [usersId], references: [id])
+  claim       claims   @relation(fields: [claimsId], references: [id])
+  status      String   @db.VarChar(36)
+  usersId     String   @db.VarChar(36)
+  claimsId    String   @db.VarChar(36)
+  assigned_by String
+  created_at  DateTime @db.Timestamp()
 }
 
 model rules {
   id         String   @id() @default(uuid()) @db.VarChar(36)
   status     String   @db.VarChar(64)
-  route      String   @unique @db.VarChar(512)
-  claim      String   @unique @db.VarChar(512)
+  route      String   @db.VarChar(512)
+  claim      String   @db.VarChar(512)
   httpMethod String   @db.VarChar(8)
   metadata   Json     @db.JsonB
-  created_at DateTime @db.Timestamptz()
-  updated_at DateTime @db.Timestamptz()
+  created_at DateTime @db.Timestamp()
+  updated_at DateTime @db.Timestamp()
 }

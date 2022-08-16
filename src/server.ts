@@ -10,8 +10,11 @@ export namespace Server {
         const router = Router({ caseSensitive: true }).use(json());
         router.post("/user/new", UserController.New);
         router.post("/user/login", UserController.Login);
-        router.get("/rules", RulesController.getAll);
-        router.use(hasJwt, DynamicRouter.middleware).get("/test", (_, res) => res.json({ success: true }));
+
+        router.use(hasJwt, DynamicRouter.middleware);
+        router.get("/user/:id", UserController.GetById);
+        router.get("/rules", RulesController.GetAll);
+        router.get("/test", (_, res) => res.json({ success: true }));
         return router;
     };
 
