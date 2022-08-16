@@ -145,3 +145,4 @@ dist
 
 .env
 .pnpm-debug.log
+.idea
