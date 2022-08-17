@@ -1,44 +1,40 @@
 -- CreateTable
 CREATE TABLE "secrets" (
-    "id" VARCHAR(36) NOT NULL,
+    "id" UUID NOT NULL,
     "token" VARCHAR(128) NOT NULL,
-    "created_at" TIMESTAMPTZ NOT NULL,
-    "expires_in" TIMESTAMPTZ NOT NULL,
+    "created_at" TIMESTAMP NOT NULL,
+    "expires_in" TIMESTAMP NOT NULL,
     "type" VARCHAR(128) NOT NULL,
     "revoked" BOOLEAN NOT NULL,
-
     CONSTRAINT "secrets_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "users" (
-    "id" VARCHAR(36) NOT NULL,
+    "id" uuid NOT NULL,
     "email" VARCHAR(512) NOT NULL,
     "nickname" VARCHAR(32) NOT NULL,
-    "created_at" TIMESTAMPTZ NOT NULL,
-    "updated_at" TIMESTAMPTZ NOT NULL,
+    "created_at" TIMESTAMP NOT NULL,
+    "updated_at" TIMESTAMP NOT NULL,
     "name" VARCHAR(512) NOT NULL,
-
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "claims" (
-    "id" VARCHAR(36) NOT NULL,
+    "id" UUID NOT NULL,
     "name" VARCHAR(512) NOT NULL,
-    "created_at" TIMESTAMPTZ NOT NULL,
-    "updated_at" TIMESTAMPTZ NOT NULL,
-
+    "created_at" TIMESTAMP NOT NULL,
+    "updated_at" TIMESTAMP NOT NULL,
     CONSTRAINT "claims_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "rules" (
-    "id" VARCHAR(36) NOT NULL,
+    "id" UUID NOT NULL,
     "match" VARCHAR(256) NOT NULL,
-    "created_at" TIMESTAMPTZ NOT NULL,
-    "updated_at" TIMESTAMPTZ NOT NULL,
-
+    "created_at" TIMESTAMP NOT NULL,
+    "updated_at" TIMESTAMP NOT NULL,
     CONSTRAINT "rules_pkey" PRIMARY KEY ("id")
 );
 
