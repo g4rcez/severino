@@ -35,22 +35,19 @@ export namespace UserController {
 
     const loginSchema = z.object({ email: z.string().email().max(512), password });
 
-    export const New = Http.endpoint(async (req, res) => {
+    export const create = Http.endpoint(async (req, res) => {
         const input = await createSchema.safeParseAsync(req.body);
         if (!input.success) {
-            console.log("->", input.error.issues);
-            return res.status(400).json({
-                errors: input.error.issues.map((x) => x.message),
-            });
+            return res.status(Http.BAD_REQUEST).json({ errors: input.error.issues });
         }
         const user = await Users.create(input.data.name, input.data.email, input.data.nickname, input.data.password);
         return res.json(user);
     });
 
-    export const Login = Http.endpoint(async (req, res) => {
+    export const login = Http.endpoint(async (req, res) => {
         const input = loginSchema.safeParse(req.body);
         if (!input.success) {
-            return res.status(400).json({ errors: input.error.issues.map((x) => x.message) });
+            return res.status(Http.BAD_REQUEST).json({ errors: input.error.issues.map((x) => x.message) });
         }
         const user = await Users.findByEmailAndPassword(input.data.email, input.data.password);
         if (Either.isLeft(user)) {
@@ -60,7 +57,7 @@ export namespace UserController {
         return res.json({ user: user.right, accessToken });
     });
 
-    export const GetById = Http.endpoint(async (req, res) => {
+    export const getById = Http.endpoint(async (req, res) => {
         const id = req.params.id as string;
         try {
             const user = await Users.findById(id);

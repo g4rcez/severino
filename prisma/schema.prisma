@@ -56,3 +56,17 @@ model rules {
   created_at DateTime @db.Timestamp()
   updated_at DateTime @db.Timestamp()
 }
+
+model routes {
+  id                String    @id() @default(uuid()) @db.VarChar(36)
+  entrypoint        String    @db.VarChar(1024)
+  target_host       String    @db.VarChar(1024)
+  target_path       String    @db.VarChar(1024)
+  entry_http_method String    @db.VarChar(8)
+  out_http_method   String    @db.VarChar(8)
+  protocol          String    @default("http") @db.VarChar(8)
+  metadata          Json
+  created_at        DateTime  @db.Timestamp()
+  updated_at        DateTime  @db.Timestamp()
+  deleted_at        DateTime? @db.Timestamp()
+}

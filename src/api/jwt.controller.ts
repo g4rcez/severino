@@ -4,7 +4,8 @@ import { application } from "../model/application";
 import { Either } from "../lib/either";
 
 namespace JwtSemver {
-    export type Number = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+    type Number = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+
     type Versioning = {
         signer: ReturnType<typeof createSigner>;
         decoder: ReturnType<typeof createDecoder>;

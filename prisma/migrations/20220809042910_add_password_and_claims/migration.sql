@@ -6,7 +6,7 @@
 
 */
 -- AlterTable
-ALTER TABLE "claims" ADD COLUMN     "usersId" VARCHAR(36);
+ALTER TABLE "claims" ADD COLUMN     "usersId" uuid;
 
 -- AlterTable
 ALTER TABLE "users" ADD COLUMN     "password" VARCHAR(512) NOT NULL;

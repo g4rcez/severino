@@ -26,11 +26,11 @@ ALTER COLUMN "updated_at" SET DATA TYPE TIMESTAMP;
 
 -- CreateTable
 CREATE TABLE "user_claims" (
-    "id" VARCHAR(36) NOT NULL,
+    "id" UUID NOT NULL,
     "status" VARCHAR(36) NOT NULL,
-    "usersId" VARCHAR(36) NOT NULL,
-    "claimsId" VARCHAR(36) NOT NULL,
-    "assigned_by" TEXT NOT NULL,
+    "usersId" UUID NOT NULL,
+    "claimsId" UUID NOT NULL,
+    "assigned_by" varchar(256) NOT NULL,
     "created_at" TIMESTAMP NOT NULL,
 
     CONSTRAINT "user_claims_pkey" PRIMARY KEY ("id")

@@ -2,33 +2,47 @@ import { Jwt } from "../api/jwt.controller";
 import { Http } from "../lib/http";
 import { Strings } from "../lib/strings";
 import { Rules } from "../model/rules";
-import { Metadata } from "../lib/metadata";
+import { Request } from "express";
+import { Either } from "../lib/either";
 
 export namespace DynamicRouter {
-    export const middleware = Http.endpoint(async (req, res, next) => {
+
+    const findRule = async (req: Request, url: string) => {
         const rules = await Rules.getRules(req.method.toLowerCase());
-        const normalizeUrl = Strings.normalizePath(req.url);
         const rule = rules.find((rule) => {
-            if (rule.route === normalizeUrl) return true;
+            if (rule.route === url) return true;
             const matchRule = Strings.matchUrl(rule.route);
-            return !!matchRule(normalizeUrl);
+            return !!matchRule(url);
         });
+        return rule === undefined ? Either.left(null) : Either.right(rule);
+    };
 
-        if (rule === undefined) return next();
+    export const middleware = Http.endpoint(async (req, res, next) => {
+        const url = Strings.normalizePath(req.url);
+        const eitherRule = await findRule(req, url);
+        if (Either.isLeft(eitherRule)) return next();
 
-        if (rule.httpMethod !== req.method.toLowerCase()) return res.status(Http.NOT_FOUND).json({ url: normalizeUrl });
+        const rule = eitherRule.right;
+
+        if (rule.httpMethod !== req.method.toLowerCase()) {
+            return res.status(Http.NOT_FOUND).json({ url });
+        }
 
         const matchClaims = new RegExp(rule.claim);
         const user: Jwt.PublicPayload = res.locals.user;
         const hasAllowedClaims = user.roles.some((x) => matchClaims.test(x));
         if (!hasAllowedClaims) {
-            return res.status(Http.NOT_AUTHORIZED).json({
-                url: normalizeUrl,
-                message: "Claims not allowed",
-            });
+            return res.status(Http.NOT_AUTHORIZED).json({ url, message: "Claims not allowed" });
         }
 
-        const result = Metadata.valid(rule.metadata, user, rule, req);
-        return result ? next() : res.status(Http.NOT_AUTHORIZED).json({ url: normalizeUrl, message: "Not authorized" });
+        const validation = Rules.valid(rule.metadata, user, rule, req);
+        if (Either.isLeft(validation)) {
+            return res.status(Http.NOT_AUTHORIZED).json({
+                url: url,
+                errors: validation.left,
+                message: "Not authorized",
+            });
+        }
+        return next();
     });
 }
