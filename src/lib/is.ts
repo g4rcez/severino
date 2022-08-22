@@ -9,4 +9,6 @@ export namespace Is {
         if (a instanceof Date) return isNaN(a as any);
         return Object.keys(a).length === 0 && Object.getPrototypeOf(a) === Object.prototype;
     };
+
+    export const string = (str: any): str is string => typeof str === "string";
 }

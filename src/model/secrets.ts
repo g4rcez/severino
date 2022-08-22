@@ -6,13 +6,11 @@ export namespace Secrets {
 
     export type Item = NonNullable<Awaited<ReturnType<typeof lastSecret>>>;
 
-    export const lastSecret = async () => {
-        const lastSecret = await secrets.findFirst({
+    export const lastSecret = async () =>
+        await secrets.findFirst({
             orderBy: [{ expires_in: "asc" }, { created_at: "desc" }],
             take: 1,
         });
-        return lastSecret;
-    };
 
     export enum Type {
         OneTimeToken = "OneTimeToken",
@@ -22,7 +20,7 @@ export namespace Secrets {
     export const create = async (version: string, expiresIn: Date) => {
         const hash = createHmac("sha512", version);
         const token = hash.digest("hex").toString();
-        const secret = await secrets.create({
+        return await secrets.create({
             data: {
                 token: token,
                 revoked: false,
@@ -32,6 +30,5 @@ export namespace Secrets {
                 type: Type.AccessToken,
             },
         });
-        return secret;
     };
 }

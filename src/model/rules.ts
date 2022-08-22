@@ -23,7 +23,8 @@ export namespace Rules {
 
     export enum Value {
         URL = "url",
-        JWT = "jwt"
+        JWT = "jwt",
+        Headers = "headers"
     }
 
     export enum UrlParamsType {
@@ -38,20 +39,23 @@ export namespace Rules {
         [UrlParamsType.Uuid]: (str: string) => regex.uuid.test(str),
     };
 
-    export const schema = z.object({
-        urlParams: z.object({
-            type: z.nativeEnum(UrlParamsType).optional(),
-            operator: z.nativeEnum(Operators),
-            from: z.object({
-                operator: z.nativeEnum(Value),
-                key: z.string(),
-            }),
-            to: z.object({
-                operator: z.nativeEnum(Value),
-                key: z.string(),
-            }),
+    const ruleSchema = z.object({
+        name: z.string().min(1).optional(),
+        type: z.nativeEnum(UrlParamsType).optional(),
+        operator: z.nativeEnum(Operators),
+        from: z.object({
+            operator: z.nativeEnum(Value),
+            key: z.string(),
         }),
-    }).partial();
+        to: z.object({
+            operator: z.nativeEnum(Value),
+            key: z.string(),
+        }),
+    });
+
+    type RuleMetadata = z.infer<typeof ruleSchema>
+
+    export const schema = z.object({ items: z.array(ruleSchema) });
 
     export type Metadata = z.infer<typeof schema>;
 
@@ -66,13 +70,8 @@ export namespace Rules {
 
 
     const comparator = {
-        [Operators.Includes]: (a: any, b: any) => {
-            if (typeof a === "string" && typeof b === "string") {
-                return a.includes(b);
-            }
-            return false;
-        },
         [Operators.Is]: (a: any, b: any) => a === b,
+        [Operators.Includes]: (a: any, b: any) => Is.string(a) && Is.string(b) ? a.includes(b) : false,
     };
 
     type Params = Record<string, string>
@@ -80,6 +79,26 @@ export namespace Rules {
     const valueFromRequest = {
         [Value.JWT]: (key: string, _: Request, jwt: Jwt.PublicPayload, __: Params) => jwt[key as keyof Jwt.PublicPayload],
         [Value.URL]: (key: string, _: Request, __: Jwt.PublicPayload, params: Params) => params[key],
+        [Value.Headers]: (key: string, req: Request, _: Jwt.PublicPayload, __: Params) => req.headers[key],
+    };
+
+    const validateRule = (rule: Shape, req: Request, metadata: RuleMetadata, payload: Jwt.PublicPayload) => {
+        const matcher = Strings.matchUrl(rule.route);
+        const matcherResult = matcher(req.url);
+        const customValidations: string[] = [];
+        const urlParams: Params = matcherResult ? matcherResult.params as never : {};
+        const to = valueFromRequest[metadata.to.operator](metadata.to.key, req, payload, urlParams);
+        const from = valueFromRequest[metadata.from.operator](metadata.from.key, req, payload, urlParams);
+        if (metadata.type) {
+            const fn = urlParamsTypeValidator[metadata.type];
+            if (to && !fn(to.toString())) customValidations.push(`'${to}' is not a '${metadata.type}'`);
+            if (from && !fn(from.toString())) customValidations.push(`'${from}' is not a '${metadata.type}'`);
+        }
+        const success = comparator[metadata.operator](to, from);
+        if (!success) {
+            customValidations.push(`Wrong operator '${metadata.operator}' for values '${to}' and '${from}'`);
+        }
+        return customValidations;
     };
 
     export const valid = (input: Metadata, payload: Jwt.PublicPayload, rule: Rules.Shape, req: Request) => {
@@ -88,36 +107,18 @@ export namespace Rules {
         if (!validation.success) {
             return Either.left(validation.error.issues.map(x => x.message));
         }
-        const metadata = validation.data;
-        const customValidations: string[] = [];
-        if (metadata.urlParams) {
-            const matcher = Strings.matchUrl(rule.route);
-            const matcherResult = matcher(req.url);
-            const urlParams: Params = matcherResult ? matcherResult.params as never : {};
-            const to = valueFromRequest[metadata.urlParams.to.operator](metadata.urlParams.to.key, req, payload, urlParams);
-            const from = valueFromRequest[metadata.urlParams.from.operator](metadata.urlParams.from.key, req, payload, urlParams);
-
-            if (metadata.urlParams.type) {
-                const fn = urlParamsTypeValidator[metadata.urlParams.type];
-                if (to && !fn(to.toString())) customValidations.push(`'${to}' is not a '${metadata.urlParams.type}'`);
-                if (from && !fn(from.toString())) customValidations.push(`'${from}' is not a '${metadata.urlParams.type}'`);
-            }
-            const success = comparator[metadata.urlParams.operator](to, from);
-            if (!success) {
-                customValidations.push(`Wrong operator '${metadata.urlParams.operator}' for values '${to}' and '${from}'`);
-            }
-        }
-        return customValidations.length === 0 ? Either.right([]) : Either.left(customValidations);
+        const customValidations = validation.data.items.flatMap(metadata => validateRule(rule, req, metadata, payload));
+        return customValidations.length === 0 ? Either.right(customValidations) : Either.left(customValidations);
     };
 
     export const getRules = memoizee(
         (httpMethod?: string): Promise<Shape[]> => {
             const select = { id: true, claim: true, route: true, status: true, httpMethod: true, metadata: true };
-            if (httpMethod === undefined) return rules.findMany({ select, where: { status: Status.Active } }) as never;
+            if (httpMethod === undefined) {
+                return rules.findMany({ select, where: { status: Status.Active } }) as never;
+            }
             return rules.findMany({ select, where: { status: Status.Active, AND: { httpMethod } } }) as never;
         },
         { async: true, length: 0, resolvers: [], maxAge: 10000 },
     );
-
-
 }

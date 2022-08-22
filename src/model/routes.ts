@@ -48,6 +48,4 @@ export namespace Routes {
             entryHttpMethod: x.entry_http_method.toLowerCase(),
         }));
     }, { async: true, resolvers: [String], length: 1 });
-
-    export const isWebSocket = (route: Shape) => route.protocol === "ws";
 }

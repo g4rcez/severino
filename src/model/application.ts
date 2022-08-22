@@ -20,8 +20,6 @@ class Application {
 
     public token = () => this.secret?.token!;
 
-    public expiresIn = () => this.secret?.expires_in!;
-
     public version = () => this.secret?.token!;
 
     public type = () => this.secret?.type!;

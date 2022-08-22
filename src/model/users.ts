@@ -45,19 +45,8 @@ export namespace Users {
 
     const getUserWithClaims = async (user: UserDB) => {
         const claims = await db.user_claims.findMany({
-            select: {
-                claim: {
-                    select: {
-                        name: true,
-                    },
-                },
-            },
-            where: {
-                usersId: user.id,
-                AND: {
-                    status: Rules.Status.Active,
-                },
-            },
+            select: { claim: { select: { name: true } } },
+            where: { usersId: user.id, AND: { status: Rules.Status.Active } },
         });
         return { claims: claims.map((x) => x.claim.name), ...mapUser(user) };
     };
@@ -75,12 +64,7 @@ export namespace Users {
     };
 
     export const findByEmailAndPassword = async (email: string, password: string) => {
-        const user = await users.findFirst({
-            where: {
-                email,
-                password: generatePassword(email, password),
-            },
-        });
+        const user = await users.findFirst({ where: { email, password: generatePassword(email, password) } });
         if (user === null) {
             return Either.left(new Error(`Cannot found ${email}`));
         }

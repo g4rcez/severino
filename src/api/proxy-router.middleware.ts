@@ -5,7 +5,6 @@ import { stringify } from "query-string";
 import { Is } from "../lib/is";
 import { compile, PathFunction } from "path-to-regexp";
 import { Strings } from "../lib/strings";
-import { Nullable } from "../lib/utility.types";
 
 export namespace ProxyRouter {
     export const proxy = createProxy({ xfwd: true, changeOrigin: true, followRedirects: true });
@@ -25,18 +24,24 @@ export namespace ProxyRouter {
         regexCompiler: PathFunction,
     ) => formatWithQueryString(origin.includes("*") ? url : regexCompiler(params), queryString);
 
+    const matchRoutes = (url: string, routes: Routes.Shape[]) => {
+        for (const i in routes) {
+            const route = routes[i];
+            if (route) {
+                const result = Strings.matchUrl(route.entrypoint)(url);
+                if (result) {
+                    return { params: result.params, route };
+                }
+            }
+        }
+        return { params: {}, route: null };
+    };
 
     export const middleware = Http.endpoint(async (req, res) => {
         const method = req.method.toLowerCase();
         const routes = await Routes.getAll(method);
         const url = Strings.normalizePath(req.originalUrl);
-        const match = routes.reduce<{ params: object; route: Nullable<Routes.Shape> }>((acc, route) => {
-            if (acc.route !== null) {
-                return acc;
-            }
-            const result = Strings.matchUrl(route.entrypoint)(url);
-            return result ? { params: result.params, route } : acc;
-        }, { params: {}, route: null });
+        const match = matchRoutes(url, routes);
 
         if (match.route === null) {
             return res.status(Http.NOT_FOUND).json({ url, message: "Not found" });
@@ -48,8 +53,6 @@ export namespace ProxyRouter {
 
         req.method = match.route.outHttpMethod;
         req.url = transformUrlPath(url, match.route.entryHttpMethod, req.query, match.params, compileRegex(match.route.targetPath));
-
-        const proxyHandler = Routes.isWebSocket(match.route) ? proxy.ws : proxy.web;
-        return proxyHandler(req, res, { target: match.route.hostname, changeOrigin: true });
+        return proxy.web(req, res, { target: match.route.hostname, changeOrigin: true });
     });
 }
